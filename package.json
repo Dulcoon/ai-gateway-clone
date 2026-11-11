@@ -3,6 +3,9 @@
   "version": "0.6.0",
   "description": "Lintas AI Gateway & Token Saver",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev --port 20127",
     "dev:webpack": "next dev --webpack --port 20127",

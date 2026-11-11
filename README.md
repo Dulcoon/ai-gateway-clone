@@ -72,6 +72,7 @@ PORT=20127
 > CREATE DATABASE lintas_ai_gateway;
 > CREATE USER lintas WITH ENCRYPTED PASSWORD 'password_rahasia';
 > GRANT ALL PRIVILEGES ON DATABASE lintas_ai_gateway TO lintas;
+> ALTER DATABASE lintas_ai_gateway OWNER TO lintas;
 > ```
 
 ### 3. Setup & Jalankan
@@ -88,8 +89,9 @@ npm run dev
 npm install
 npm run db:migrate
 npm run build
-pm2 start npm --name "lintas-ai" -- start
+pm2 start custom-server.js --name "lintas-ai"
 pm2 save
+# (Atau jika tanpa PM2: npm start)
 ```
 
 Cek status kesehatan server:
