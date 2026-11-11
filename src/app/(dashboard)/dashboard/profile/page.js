@@ -1,0 +1,604 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, Button, Toggle, Input } from "@/shared/components";
+import { useTheme } from "@/shared/hooks/useTheme";
+import { cn } from "@/shared/utils/cn";
+import { APP_CONFIG } from "@/shared/constants/config";
+
+export default function ProfilePage() {
+  const { theme, setTheme } = useTheme();
+  const [settings, setSettings] = useState({ fallbackStrategy: "fill-first" });
+  const [loading, setLoading] = useState(true);
+  const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
+  const [passStatus, setPassStatus] = useState({ type: "", message: "" });
+  const [passLoading, setPassLoading] = useState(false);
+
+  const [proxyForm, setProxyForm] = useState({
+    outboundProxyEnabled: false,
+    outboundProxyUrl: "",
+    outboundNoProxy: "",
+  });
+  const [proxyStatus, setProxyStatus] = useState({ type: "", message: "" });
+  const [proxyLoading, setProxyLoading] = useState(false);
+  const [proxyTestLoading, setProxyTestLoading] = useState(false);
+
+  const [isRemoteHost, setIsRemoteHost] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined")
+      setIsRemoteHost(!["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setSettings(data);
+        setProxyForm({
+          outboundProxyEnabled: data?.outboundProxyEnabled === true,
+          outboundProxyUrl: data?.outboundProxyUrl || "",
+          outboundNoProxy: data?.outboundNoProxy || "",
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch settings:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const updateOutboundProxy = async (e) => {
+    e.preventDefault();
+    if (settings.outboundProxyEnabled !== true) return;
+    setProxyLoading(true);
+    setProxyStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outboundProxyUrl: proxyForm.outboundProxyUrl,
+          outboundNoProxy: proxyForm.outboundNoProxy,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSettings((prev) => ({ ...prev, ...data }));
+        setProxyStatus({ type: "success", message: "Proxy settings applied" });
+      } else {
+        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+      }
+    } catch (err) {
+      setProxyStatus({ type: "error", message: "An error occurred" });
+    } finally {
+      setProxyLoading(false);
+    }
+  };
+
+  const testOutboundProxy = async () => {
+    if (settings.outboundProxyEnabled !== true) return;
+
+    const proxyUrl = (proxyForm.outboundProxyUrl || "").trim();
+    if (!proxyUrl) {
+      setProxyStatus({ type: "error", message: "Please enter a Proxy URL to test" });
+      return;
+    }
+
+    setProxyTestLoading(true);
+    setProxyStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/settings/proxy-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proxyUrl }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setProxyStatus({
+          type: "success",
+          message: `Proxy test OK (${data.status}) in ${data.elapsedMs}ms`,
+        });
+      } else {
+        setProxyStatus({
+          type: "error",
+          message: data?.error || "Proxy test failed",
+        });
+      }
+    } catch (err) {
+      setProxyStatus({ type: "error", message: "An error occurred" });
+    } finally {
+      setProxyTestLoading(false);
+    }
+  };
+
+  const updateOutboundProxyEnabled = async (outboundProxyEnabled) => {
+    setProxyLoading(true);
+    setProxyStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outboundProxyEnabled }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSettings((prev) => ({ ...prev, ...data }));
+        setProxyForm((prev) => ({ ...prev, outboundProxyEnabled: data?.outboundProxyEnabled === true }));
+        setProxyStatus({
+          type: "success",
+          message: outboundProxyEnabled ? "Proxy enabled" : "Proxy disabled",
+        });
+      } else {
+        setProxyStatus({ type: "error", message: data.error || "Failed to update proxy settings" });
+      }
+    } catch (err) {
+      setProxyStatus({ type: "error", message: "An error occurred" });
+    } finally {
+      setProxyLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwords.new !== passwords.confirm) {
+      setPassStatus({ type: "error", message: "Passwords do not match" });
+      return;
+    }
+
+    setPassLoading(true);
+    setPassStatus({ type: "", message: "" });
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwords.current,
+          newPassword: passwords.new,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setPassStatus({ type: "success", message: "Password updated successfully" });
+        setPasswords({ current: "", new: "", confirm: "" });
+      } else {
+        setPassStatus({ type: "error", message: data.error || "Failed to update password" });
+      }
+    } catch (err) {
+      setPassStatus({ type: "error", message: "An error occurred" });
+    } finally {
+      setPassLoading(false);
+    }
+  };
+
+  const updateFallbackStrategy = async (strategy) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fallbackStrategy: strategy }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, fallbackStrategy: strategy }));
+      }
+    } catch (err) {
+      console.error("Failed to update settings:", err);
+    }
+  };
+
+  const updateComboStrategy = async (strategy) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comboStrategy: strategy }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, comboStrategy: strategy }));
+      }
+    } catch (err) {
+      console.error("Failed to update combo strategy:", err);
+    }
+  };
+
+  const updateStickyLimit = async (limit) => {
+    const numLimit = parseInt(limit);
+    if (isNaN(numLimit) || numLimit < 1) return;
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stickyRoundRobinLimit: numLimit }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, stickyRoundRobinLimit: numLimit }));
+      }
+    } catch (err) {
+      console.error("Failed to update sticky limit:", err);
+    }
+  };
+
+  const updateComboStickyLimit = async (limit) => {
+    const numLimit = parseInt(limit);
+    if (isNaN(numLimit) || numLimit < 1) return;
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comboStickyRoundRobinLimit: numLimit }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, comboStickyRoundRobinLimit: numLimit }));
+      }
+    } catch (err) {
+      console.error("Failed to update combo sticky limit:", err);
+    }
+  };
+
+  const updateRequireLogin = async (requireLogin) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requireLogin }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, requireLogin }));
+      }
+    } catch (err) {
+      console.error("Failed to update require login:", err);
+    }
+  };
+
+  const updateObservabilityEnabled = async (enabled) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enableObservability: enabled }),
+      });
+      if (res.ok) {
+        setSettings(prev => ({ ...prev, enableObservability: enabled }));
+      }
+    } catch (err) {
+      console.error("Failed to update enableObservability:", err);
+    }
+  };
+
+  const observabilityEnabled = settings.enableObservability === true;
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        window.location.assign("/login");
+      }
+    } catch (err) {
+      console.error("Failed to logout:", err);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-0">
+      <div className="flex flex-col gap-6">
+        {/* Appearance */}
+        <Card>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="size-10 sm:size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-xl sm:text-2xl">palette</span>
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold">Appearance</h2>
+                <p className="text-xs sm:text-sm text-text-muted">Customize dashboard theme</p>
+              </div>
+            </div>
+            <div className="inline-flex p-1 rounded-lg bg-black/5 dark:bg-white/5">
+              {["light", "dark", "system"].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTheme(option)}
+                  className={cn(
+                    "flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-md font-medium transition-all",
+                    theme === option
+                      ? "bg-white dark:bg-white/10 text-text-main shadow-sm"
+                      : "text-text-muted hover:text-text-main"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {option === "light" ? "light_mode" : option === "dark" ? "dark_mode" : "contrast"}
+                  </span>
+                  <span className="capitalize text-xs sm:text-sm">{option}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* Security */}
+        <Card>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+              <span className="material-symbols-outlined text-[20px]">shield</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold">Security</h3>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">Require login</p>
+                <p className="text-xs sm:text-sm text-text-muted">
+                  When ON, dashboard requires password. When OFF, access without login.
+                </p>
+              </div>
+              <Toggle
+                checked={settings.requireLogin === true}
+                onChange={() => updateRequireLogin(!settings.requireLogin)}
+                disabled={loading}
+              />
+            </div>
+            {settings.requireLogin === true && (
+              <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-border/50">
+                {settings.hasPassword && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs sm:text-sm font-medium">Current Password</label>
+                    <Input
+                      type="password"
+                      placeholder="Enter current password"
+                      value={passwords.current}
+                      onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                      required
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs sm:text-sm font-medium">New Password</label>
+                  <Input
+                    type="password"
+                    placeholder="Enter new password"
+                    value={passwords.new}
+                    onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs sm:text-sm font-medium">Confirm Password</label>
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={passwords.confirm}
+                    onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                    required
+                  />
+                </div>
+                <Button type="submit" variant="primary" loading={passLoading} className="self-end">
+                  Update Password
+                </Button>
+                {passStatus.message && (
+                  <p className={`text-sm ${passStatus.type === "error" ? "text-red-500" : "text-green-500"}`}>
+                    {passStatus.message}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+        </Card>
+
+        {/* Routing Preferences */}
+        <Card>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">route</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold">Routing Strategy</h3>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">Round Robin</p>
+                <p className="text-xs sm:text-sm text-text-muted">
+                  Cycle through accounts to distribute load
+                </p>
+              </div>
+              <Toggle
+                checked={settings.fallbackStrategy === "round-robin"}
+                onChange={() => updateFallbackStrategy(settings.fallbackStrategy === "round-robin" ? "fill-first" : "round-robin")}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Sticky Round Robin Limit */}
+            {settings.fallbackStrategy === "round-robin" && (
+              <div className="flex items-start sm:items-center justify-between gap-4 pt-2 border-t border-border/50">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm sm:text-base">Sticky Limit</p>
+                  <p className="text-xs sm:text-sm text-text-muted">
+                    Calls per account before switching
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={settings.stickyRoundRobinLimit || 3}
+                  onChange={(e) => updateStickyLimit(e.target.value)}
+                  disabled={loading}
+                  className="w-16 sm:w-20 text-center shrink-0"
+                />
+              </div>
+            )}
+
+            {/* Combo Round Robin */}
+            <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">Combo Round Robin</p>
+                <p className="text-xs sm:text-sm text-text-muted">
+                  Cycle through providers in combos instead of always starting with first
+                </p>
+              </div>
+              <Toggle
+                checked={settings.comboStrategy === "round-robin"}
+                onChange={() => updateComboStrategy(settings.comboStrategy === "round-robin" ? "fallback" : "round-robin")}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Combo Sticky Round Robin Limit */}
+            {settings.comboStrategy === "round-robin" && (
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <div>
+                  <p className="font-medium">Combo Sticky Limit</p>
+                  <p className="text-sm text-text-muted">
+                    Calls per combo model before switching
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={settings.comboStickyRoundRobinLimit || 1}
+                  onChange={(e) => updateComboStickyLimit(e.target.value)}
+                  disabled={loading}
+                  className="w-20 text-center"
+                />
+              </div>
+            )}
+
+            <p className="text-xs text-text-muted italic pt-2 border-t border-border/50">
+              {settings.fallbackStrategy === "round-robin"
+                ? `Currently distributing requests across all available accounts with ${settings.stickyRoundRobinLimit || 3} calls per account.`
+                : "Currently using accounts in priority order (Fill First)."}
+              {settings.comboStrategy === "round-robin"
+                ? ` Combos rotate after ${settings.comboStickyRoundRobinLimit || 1} call${(settings.comboStickyRoundRobinLimit || 1) === 1 ? "" : "s"} per model.`
+                : " Combos always start with their first model."}
+            </p>
+          </div>
+        </Card>
+
+        {/* Network */}
+        <Card>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">wifi</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold">Network</h3>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base">Outbound Proxy</p>
+                <p className="text-xs sm:text-sm text-text-muted">Enable proxy for OAuth + provider outbound requests.</p>
+              </div>
+              <Toggle
+                checked={settings.outboundProxyEnabled === true}
+                onChange={() => updateOutboundProxyEnabled(!(settings.outboundProxyEnabled === true))}
+                disabled={loading || proxyLoading}
+              />
+            </div>
+
+            {settings.outboundProxyEnabled === true && (
+              <form onSubmit={updateOutboundProxy} className="flex flex-col gap-4 pt-2 border-t border-border/50">
+                <div className="flex flex-col gap-2">
+                  <label className="font-medium text-sm sm:text-base">Proxy URL</label>
+                  <Input
+                    placeholder="http://127.0.0.1:7897"
+                    value={proxyForm.outboundProxyUrl}
+                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundProxyUrl: e.target.value }))}
+                    disabled={loading || proxyLoading}
+                  />
+                  <p className="text-xs sm:text-sm text-text-muted">Leave empty to inherit existing env proxy (if any).</p>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+                  <label className="font-medium text-sm sm:text-base">No Proxy</label>
+                  <Input
+                    placeholder="localhost,127.0.0.1"
+                    value={proxyForm.outboundNoProxy}
+                    onChange={(e) => setProxyForm((prev) => ({ ...prev, outboundNoProxy: e.target.value }))}
+                    disabled={loading || proxyLoading}
+                  />
+                  <p className="text-xs sm:text-sm text-text-muted">Comma-separated hostnames/domains to bypass the proxy.</p>
+                </div>
+
+                <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={proxyTestLoading}
+                    disabled={loading || proxyLoading}
+                    onClick={testOutboundProxy}
+                    className="w-full sm:w-auto"
+                  >
+                    Test proxy URL
+                  </Button>
+                  <Button type="submit" variant="primary" loading={proxyLoading} className="w-full sm:w-auto">
+                    Apply
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {proxyStatus.message && (
+              <p className={`text-xs sm:text-sm ${proxyStatus.type === "error" ? "text-red-500" : "text-green-500"} pt-2 border-t border-border/50`}>
+                {proxyStatus.message}
+              </p>
+            )}
+          </div>
+        </Card>
+
+        {/* Observability Settings */}
+        <Card>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
+              <span className="material-symbols-outlined text-[20px]">monitoring</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold">Observability</h3>
+          </div>
+          <div className="flex items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm sm:text-base">Enable Observability</p>
+              <p className="text-xs sm:text-sm text-text-muted">
+                Record request details for inspection in the logs view
+              </p>
+            </div>
+            <Toggle
+              checked={observabilityEnabled}
+              onChange={updateObservabilityEnabled}
+              disabled={loading}
+            />
+          </div>
+        </Card>
+
+        {/* Account actions */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            fullWidth
+            icon="logout"
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        </div>
+
+        {/* App Info */}
+        <div className="text-center text-xs sm:text-sm text-text-muted py-4">
+          <p>{APP_CONFIG.name} v{APP_CONFIG.version}</p>
+          <p className="mt-1">{isRemoteHost ? "Remote Mode" : "Local Mode - Running on PostgreSQL"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}

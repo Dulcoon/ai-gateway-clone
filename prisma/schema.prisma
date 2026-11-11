@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// LINTAS AI GATEWAY CORE DATABASE SCHEMA
+// Focus: AI Proxy, Model Routing & Fallback
+// ==========================================
+
+model Setting {
+  id        Int      @id @default(1)
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model ProviderConnection {
+  id        String   @id @default(uuid())
+  provider  String
+  authType  String
+  name      String?
+  email     String?
+  priority  Int?
+  isActive  Boolean  @default(true)
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([provider])
+  @@index([provider, isActive])
+  @@index([provider, priority])
+  @@map("providerConnections")
+}
+
+model ProviderNode {
+  id        String   @id @default(uuid())
+  type      String?
+  name      String?
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@map("providerNodes")
+}
+
+model ApiKey {
+  id               String   @id @default(uuid())
+  key              String   @unique
+  name             String?
+  machineId        String?
+  isActive         Boolean  @default(true)
+  accessRestricted String?  @default("unrestricted")
+  accessAllow      String?  @default("all")
+  createdAt        DateTime @default(now())
+
+  @@index([key])
+  @@map("apiKeys")
+}
+
+model Combo {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  kind      String?
+  models    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@map("combos")
+}
+
+// General Key-Value store used by Gateway for:
+// modelAliases, customModels, mitmAlias, pricing, disabledModels, thoughtSignature
+model Kv {
+  scope String
+  key   String
+  value String
+
+  @@id([scope, key])
+  @@index([scope])
+  @@map("kv")
+}
+
+model RequestDetail {
+  id           String   @id
+  timestamp    String
+  provider     String?
+  model        String?
+  connectionId String?
+  status       String?
+  data         Json
+
+  @@index([timestamp(sort: Desc)])
+  @@index([provider])
+  @@index([model])
+  @@index([connectionId])
+  @@map("requestDetails")
+}
+
+model UsageHistory {
+  id               Int      @id @default(autoincrement())
+  timestamp        String
+  provider         String?
+  model            String?
+  connectionId     String?
+  apiKey           String?
+  endpoint         String?
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  cost             Float    @default(0)
+  status           String?
+  tokens           String?
+  meta             String?
+
+  @@index([timestamp(sort: Desc)])
+  @@index([provider])
+  @@index([model])
+  @@index([connectionId])
+  @@map("usageHistory")
+}
+
+model UsageDaily {
+  dateKey String @id
+  data    Json
+
+  @@map("usageDaily")
+}
