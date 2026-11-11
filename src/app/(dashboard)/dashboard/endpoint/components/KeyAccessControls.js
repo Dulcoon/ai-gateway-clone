@@ -8,11 +8,20 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { Toggle, ModelSelectModal } from "@/shared/components";
 
-export default function KeyAccessControls({ apiKey, onChange, onRequestRestrict }) {
+export default function KeyAccessControls({ apiKey, onChange, onRequestRestrict, onAllowedIpsChange }) {
   const access = apiKey.access || { restricted: false, allow: [] };
   const [pickerOpen, setPickerOpen] = useState(false);
   const [activeProviders, setActiveProviders] = useState([]);
   const [modelAliases, setModelAliases] = useState({});
+  const [isEditingIp, setIsEditingIp] = useState(false);
+  const [ipInput, setIpInput] = useState(apiKey.allowedIps || "");
+
+  const handleSaveIp = () => {
+    if (onAllowedIpsChange) {
+      onAllowedIpsChange(ipInput.trim());
+    }
+    setIsEditingIp(false);
+  };
 
   const openPicker = async () => {
     setPickerOpen(true);
@@ -81,6 +90,71 @@ export default function KeyAccessControls({ apiKey, onChange, onRequestRestrict 
           closeOnSelect={false}
         />
       )}
+
+      {/* IP Whitelist */}
+      <div className="mt-2.5 pt-2 border-t border-black/[0.04] dark:border-white/[0.04]">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="material-symbols-outlined text-[15px] text-text-muted">lan</span>
+          <span className="text-xs font-medium text-text-muted">Allowed IPs:</span>
+          {isEditingIp ? (
+            <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+              <input
+                type="text"
+                value={ipInput}
+                onChange={(e) => setIpInput(e.target.value)}
+                placeholder="127.0.0.1, 10.0.0.0/24 (empty for all)"
+                className="w-full text-xs font-mono px-2 py-0.5 rounded border border-black/15 dark:border-white/15 bg-black/5 dark:bg-white/5 focus:outline-none focus:border-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveIp();
+                  if (e.key === "Escape") {
+                    setIpInput(apiKey.allowedIps || "");
+                    setIsEditingIp(false);
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                onClick={handleSaveIp}
+                className="px-2 py-0.5 text-xs font-medium rounded bg-primary text-white hover:bg-primary/90 transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setIpInput(apiKey.allowedIps || "");
+                  setIsEditingIp(false);
+                }}
+                className="px-1.5 py-0.5 text-xs text-text-muted hover:text-text-main"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              {apiKey.allowedIps && apiKey.allowedIps.trim() && apiKey.allowedIps.trim() !== "*" ? (
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  {apiKey.allowedIps}
+                </span>
+              ) : (
+                <span className="text-[11px] text-text-muted italic">
+                  Any IP allowed
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setIpInput(apiKey.allowedIps || "");
+                  setIsEditingIp(true);
+                }}
+                className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                title="Edit allowed IPs"
+              >
+                <span className="material-symbols-outlined text-[13px]">edit</span>
+                Edit
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -89,8 +163,10 @@ KeyAccessControls.propTypes = {
   apiKey: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string,
+    allowedIps: PropTypes.string,
     access: PropTypes.shape({ restricted: PropTypes.bool, allow: PropTypes.arrayOf(PropTypes.string) }),
   }).isRequired,
   onChange: PropTypes.func.isRequired,
   onRequestRestrict: PropTypes.func.isRequired,
+  onAllowedIpsChange: PropTypes.func,
 };

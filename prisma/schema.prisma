@@ -58,6 +58,7 @@ model ApiKey {
   isActive         Boolean  @default(true)
   accessRestricted String?  @default("unrestricted")
   accessAllow      String?  @default("all")
+  allowedIps       String?  @default("")
   createdAt        DateTime @default(now())
 
   @@index([key])

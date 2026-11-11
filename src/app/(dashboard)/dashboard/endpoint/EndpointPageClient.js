@@ -14,6 +14,7 @@ export default function APIPageClient({ machineId }) {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyAllowedIps, setNewKeyAllowedIps] = useState("");
   const [createdKey, setCreatedKey] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
   const [visibleKeys, setVisibleKeys] = useState(new Set());
@@ -73,7 +74,10 @@ export default function APIPageClient({ machineId }) {
       const res = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName }),
+        body: JSON.stringify({
+          name: newKeyName.trim(),
+          allowedIps: newKeyAllowedIps.trim(),
+        }),
       });
       const data = await res.json();
 
@@ -81,6 +85,7 @@ export default function APIPageClient({ machineId }) {
         setCreatedKey(data.key);
         await fetchData();
         setNewKeyName("");
+        setNewKeyAllowedIps("");
         setShowAddModal(false);
       }
     } catch (error) {
@@ -141,6 +146,24 @@ export default function APIPageClient({ machineId }) {
       }
     } catch (error) {
       console.log("Error updating key access:", error);
+    }
+  };
+
+  const handleUpdateKeyAllowedIps = async (id, allowedIps) => {
+    try {
+      const res = await fetch(`/api/keys/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowedIps }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.key) {
+        setKeys(prev => prev.map(k => k.id === id ? { ...k, allowedIps: data.key.allowedIps } : k));
+      } else {
+        console.log("Error updating key allowed IPs:", data.error || res.status);
+      }
+    } catch (error) {
+      console.log("Error updating key allowed IPs:", error);
     }
   };
 
@@ -286,6 +309,7 @@ export default function APIPageClient({ machineId }) {
                   <KeyAccessControls
                     apiKey={key}
                     onChange={(access) => handleUpdateKeyAccess(key.id, access)}
+                    onAllowedIpsChange={(allowedIps) => handleUpdateKeyAllowedIps(key.id, allowedIps)}
                     onRequestRestrict={() => setConfirmState({
                       title: "Restrict API Key",
                       message: `Restrict API key "${key.name}"?\n\nIt will only be able to call the combos and models you add.`,
@@ -336,6 +360,7 @@ export default function APIPageClient({ machineId }) {
         onClose={() => {
           setShowAddModal(false);
           setNewKeyName("");
+          setNewKeyAllowedIps("");
         }}
       >
         <div className="flex flex-col gap-4">
@@ -345,6 +370,15 @@ export default function APIPageClient({ machineId }) {
             onChange={(e) => setNewKeyName(e.target.value)}
             placeholder="Production Key"
           />
+          <Input
+            label="Allowed IPs (Optional)"
+            value={newKeyAllowedIps}
+            onChange={(e) => setNewKeyAllowedIps(e.target.value)}
+            placeholder="e.g. 127.0.0.1, 10.0.0.0/24 (empty for all)"
+          />
+          <p className="text-[11px] text-text-muted -mt-2">
+            Comma-separated IP addresses or CIDR blocks. Leave empty to allow requests from any IP.
+          </p>
           <div className="flex gap-2">
             <Button onClick={handleCreateKey} fullWidth disabled={!newKeyName.trim()}>
               Create
@@ -353,6 +387,7 @@ export default function APIPageClient({ machineId }) {
               onClick={() => {
                 setShowAddModal(false);
                 setNewKeyName("");
+                setNewKeyAllowedIps("");
               }}
               variant="ghost"
               fullWidth

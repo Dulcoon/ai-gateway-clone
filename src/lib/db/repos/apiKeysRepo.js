@@ -17,6 +17,7 @@ function rowToKey(row) {
     name: row.name,
     machineId: row.machineId,
     isActive: row.isActive === 1 || row.isActive === true,
+    allowedIps: row.allowedIps || "",
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
     access: keyAccessFromColumns(isRestricted ? 1 : 0, row.accessAllow),
   };
@@ -46,12 +47,12 @@ export async function getApiKeyByKey(key) {
   return rowToKey(row);
 }
 
-export async function createApiKey(name, machineId) {
+export async function createApiKey(name, machineId, access = null, allowedIps = "") {
   if (!machineId) throw new Error("machineId is required");
   const { generateApiKeyWithMachine } = await import("../../../shared/utils/apiKey.js");
   const result = generateApiKeyWithMachine(machineId);
 
-  const cols = keyAccessToColumns(KEY_ACCESS_UNRESTRICTED);
+  const cols = keyAccessToColumns(access || KEY_ACCESS_UNRESTRICTED);
   const row = await prisma.apiKey.create({
     data: {
       id: uuidv4(),
@@ -59,6 +60,7 @@ export async function createApiKey(name, machineId) {
       key: result.key,
       machineId,
       isActive: true,
+      allowedIps: typeof allowedIps === "string" ? allowedIps.trim() : "",
       accessRestricted: String(cols.accessRestricted),
       accessAllow: String(cols.accessAllow),
     },
@@ -83,6 +85,7 @@ export async function updateApiKey(id, data) {
       name: merged.name,
       machineId: merged.machineId,
       isActive: merged.isActive === true,
+      allowedIps: typeof merged.allowedIps === "string" ? merged.allowedIps.trim() : (existing.allowedIps || ""),
       accessRestricted: String(cols.accessRestricted),
       accessAllow: String(cols.accessAllow),
     },

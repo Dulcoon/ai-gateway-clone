@@ -33,6 +33,7 @@ import {
 } from "@/shared/constants/keyAccess.js";
 import { errorResponse } from "open-sse/utils/error.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
+import { isIpAllowed, extractClientIp } from "@/shared/utils/ipMatch.js";
 import * as log from "../utils/logger.js";
 
 const lower = (s) => String(s).toLowerCase();
@@ -63,19 +64,41 @@ export function extractClientApiKey(request) {
 
 /**
  * Access context for the request's key, or null when the request is
- * unrestricted (no key, unknown key, or a key whose access is unrestricted).
- * Keys are only authenticated elsewhere (middleware / requireApiKey); this only
- * decides what an identified key may call.
+ * unrestricted (no key, unknown key, or a key whose access and IP are unrestricted).
+ * Keys are only authenticated elsewhere (middleware / requireApiKey); this
+ * decides whether the client's IP and requested model/combo are permitted.
  */
 export async function getKeyAccessContext(request) {
   const apiKey = extractClientApiKey(request);
   if (!apiKey) return null;
   const record = await getApiKeyByKey(apiKey);
-  if (!record?.access?.restricted) return null;
+  if (!record) return null;
+
+  const isModelRestricted = !!record?.access?.restricted;
+  const allowedIps = (record?.allowedIps || "").trim();
+  const hasIpRestriction = allowedIps.length > 0 && allowedIps !== "*";
+
+  // Completely unrestricted key
+  if (!isModelRestricted && !hasIpRestriction) return null;
+
+  let ipDenied = false;
+  let clientIp = "";
+  if (hasIpRestriction) {
+    clientIp = extractClientIp(request);
+    if (!isIpAllowed(clientIp, allowedIps)) {
+      ipDenied = true;
+    }
+  }
+
   return {
     keyId: record.id,
     keyName: record.name || record.id,
-    allow: record.access.allow || [],
+    allow: record.access?.allow || [],
+    isModelRestricted,
+    hasIpRestriction,
+    allowedIps,
+    clientIp,
+    ipDenied,
     _sets: null,
   };
 }
@@ -115,6 +138,11 @@ export function keyAccessDeniedResponse(ctx, requested) {
   return errorResponse(HTTP_STATUS.FORBIDDEN, keyAccessDeniedMessage(requested));
 }
 
+export function keyIpAccessDeniedResponse(ctx) {
+  log.warn("AUTH", `key-access: key "${ctx.keyName}" denied client IP "${ctx.clientIp}" (allowed: ${ctx.allowedIps})`);
+  return errorResponse(HTTP_STATUS.FORBIDDEN, `Access denied: IP "${ctx.clientIp || "unknown"}" is not authorized for this API key`);
+}
+
 /**
  * Gate for endpoints whose `model` may be a combo or a model (chat, image, tts).
  * Call with the requested string BEFORE combo expansion.
@@ -122,6 +150,8 @@ export function keyAccessDeniedResponse(ctx, requested) {
  */
 export async function enforceKeyAccess(ctx, requested) {
   if (!ctx) return null;
+  if (ctx.ipDenied) return keyIpAccessDeniedResponse(ctx);
+  if (!ctx.isModelRestricted) return null;
   if (typeof requested !== "string" || !requested) return keyAccessDeniedResponse(ctx, String(requested ?? ""));
   const sets = await getAllowSets(ctx);
   const comboModels = await getComboModels(requested);
@@ -139,6 +169,8 @@ export async function enforceKeyAccess(ctx, requested) {
  */
 export async function enforceKeyAccessResolved(ctx, requested, provider, model) {
   if (!ctx) return null;
+  if (ctx.ipDenied) return keyIpAccessDeniedResponse(ctx);
+  if (!ctx.isModelRestricted) return null;
   const label = requested || (provider ? `${provider}/${model ?? ""}` : "");
   if (!provider || !model) return keyAccessDeniedResponse(ctx, label);
   const sets = await getAllowSets(ctx);
@@ -151,6 +183,8 @@ export async function enforceKeyAccessResolved(ctx, requested, provider, model) 
  */
 export async function enforceKeyAccessProvider(ctx, requested, comboModels) {
   if (!ctx) return null;
+  if (ctx.ipDenied) return keyIpAccessDeniedResponse(ctx);
+  if (!ctx.isModelRestricted) return null;
   if (typeof requested !== "string" || !requested) return keyAccessDeniedResponse(ctx, String(requested ?? ""));
   const sets = await getAllowSets(ctx);
   const allowed = comboModels
@@ -167,6 +201,8 @@ export async function enforceKeyAccessProvider(ctx, requested, comboModels) {
  */
 export async function filterAdapterModels(ctx, augmented, original) {
   if (!ctx || !Array.isArray(augmented)) return augmented;
+  if (ctx.ipDenied) return [];
+  if (!ctx.isModelRestricted) return augmented;
   const keep = new Set(original || []);
   const out = [];
   for (const m of augmented) {
@@ -179,7 +215,8 @@ export async function filterAdapterModels(ctx, augmented, original) {
 /** /v1/models: a restricted key sees only the combos and models it may call. */
 export async function filterModelsListForKey(ctx, list) {
   if (!ctx || !Array.isArray(list)) return list;
-  const sets = await getAllowSets(ctx);
+  if (ctx.ipDenied) return [];
+  if (!ctx.isModelRestricted) return list;
   const out = [];
   for (const entry of list) {
     if (!entry?.id) continue;
