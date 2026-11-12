@@ -17,8 +17,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Lintas AI Gateway - AI Routing & Proxy Management",
-  description: "Lintas AI Gateway. One OpenAI-compatible endpoint for all AI providers with smart fallback, streaming, and usage tracking.",
+  title: "Route Right - AI Routing & Proxy Management",
+  description: "Route Right Gateway. One OpenAI-compatible endpoint for all AI providers with smart fallback, streaming, and usage tracking.",
   icons: {
     icon: "/favicon.svg",
   },

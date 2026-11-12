@@ -2,7 +2,7 @@ import pkg from "../../../package.json" with { type: "json" };
 
 // App configuration
 export const APP_CONFIG = {
-  name: "Lintas AI Gateway",
+  name: "Route Right",
   description: "AI Routing Gateway & Infrastructure Management",
   version: pkg.version,
 };
