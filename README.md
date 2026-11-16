@@ -55,17 +55,54 @@ Sesuai spesifikasi **Lintas AI Functional Specification Document (FSD Bagian 2.1
 * **PostgreSQL:** `>= 14.0` (aktif di port `5432`)
 
 ### 2. Konfigurasi Environment
+
 Salin template environment:
 ```bash
 cp .env.example .env
 ```
-Sesuaikan nilai di `.env`:
+
+Sesuaikan nilai di `.env` sesuai kebutuhan server Anda:
 ```env
+# Database Connection (PostgreSQL - Prisma ORM)
 DATABASE_URL="postgresql://lintas:password_rahasia@localhost:5432/lintas_ai_gateway?schema=public"
-JWT_SECRET=rahasia-string-acak-panjang
+
+# Keamanan & Admin Dashboard
+JWT_SECRET=lintas-ai-change-this-to-a-long-random-secret-string
 INITIAL_PASSWORD=admin-password-dashboard
+AUTH_COOKIE_SECURE=false
+
+# Direktori Data Lokal (pastikan writable)
+DATA_DIR=./data
+
+# Server Runtime
 PORT=20127
+HOSTNAME=0.0.0.0
+NODE_ENV=production
+
+# Konfigurasi Domain / URL Gateway
+BASE_URL=http://localhost:20127
+NEXT_PUBLIC_BASE_URL=http://localhost:20127
+
+# Pengamanan Endpoint AI Gateway
+REQUIRE_API_KEY=false
 ```
+
+#### 📋 Panduan Variabel Environment 
+
+| Variabel | Tipe / Default | Keterangan & Rekomendasi Production |
+|---|---|---|
+| `DATABASE_URL` | String | Connection string PostgreSQL untuk Prisma ORM. Format: `postgresql://<user>:<password>@<host>:<port>/<dbname>?schema=public`. |
+| `JWT_SECRET` | String (Acak) | Kunci enkripsi token sesi login admin dashboard. **Wajib diubah** ke string acak panjang di production. |
+| `INITIAL_PASSWORD` | String | Password login default saat pertama kali setup dashboard. Dapat diubah langsung setelah login. |
+| `AUTH_COOKIE_SECURE` | Boolean (`false`) | Ubah ke `true` jika server diakses menggunakan **HTTPS / SSL**. Tetap `false` jika menggunakan HTTP biasa / IP lokal. |
+| `DATA_DIR` | Path (`./data`) | Lokasi file runtime lokal (cache token-saver, machine-id, certs). Pastikan user PM2/systemd memiliki izin tulis (*write access*). |
+| `PORT` | Number (`20127`) | Port listener server aplikasi. |
+| `HOSTNAME` | IP (`0.0.0.0`) | Bind address. `0.0.0.0` memastikan server dapat menerima trafik dari Nginx / reverse proxy lokal. |
+| `NODE_ENV` | Enum (`production`) | Gunakan `production` di VPS/server untuk performa maksimal dan caching Next.js. |
+| `BASE_URL` | URL | URL root server (misal: `https://ai-proxy.perusahaan.com` atau `http://localhost:20127`). Digunakan untuk callback & navigasi. |
+| `NEXT_PUBLIC_BASE_URL` | URL | Harus bernilai sama dengan `BASE_URL`, diakses oleh komponen frontend dashboard. |
+| `REQUIRE_API_KEY` | Boolean (`false`) | Jika `true`, memanggil endpoint `/v1/*` wajib menyertakan `Authorization: Bearer <KEY>`. |
+
 
 > **Tip PostgreSQL Native Linux:** Buat database & user baru jika dibutuhkan:
 > ```sql
@@ -144,6 +181,3 @@ curl http://localhost:20127/v1/chat/completions \
 ```
 
 ---
-
-## 📄 Lisensi
-Hak Cipta © 2026 Lintas AI. Berlisensi di bawah lisensi MIT.
