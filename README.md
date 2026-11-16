@@ -104,13 +104,26 @@ REQUIRE_API_KEY=false
 | `REQUIRE_API_KEY` | Boolean (`false`) | Jika `true`, memanggil endpoint `/v1/*` wajib menyertakan `Authorization: Bearer <KEY>`. |
 
 
-> **Tip PostgreSQL Native Linux:** Buat database & user baru jika dibutuhkan:
+> **💡 Panduan Setup Database PostgreSQL (Wajib Hak Akses Schema & Tabel):**
+> Di PostgreSQL (terutama versi 15 & 16 ke atas), hak akses harus diberikan hingga ke tingkat **schema `public`** dan **tabel**, bukan hanya di tingkat database saja, agar Prisma tidak mengalami error `User was denied access`:
 > ```sql
+> -- 1. Buat database dan user baru
 > CREATE DATABASE lintas_ai_gateway;
 > CREATE USER lintas WITH ENCRYPTED PASSWORD 'password_rahasia';
-> GRANT ALL PRIVILEGES ON DATABASE lintas_ai_gateway TO lintas;
 > ALTER DATABASE lintas_ai_gateway OWNER TO lintas;
+> GRANT ALL PRIVILEGES ON DATABASE lintas_ai_gateway TO lintas;
+> 
+> -- 2. Pindah ke database tersebut (Wajib!)
+> \c lintas_ai_gateway
+> 
+> -- 3. Berikan hak akses penuh pada schema public & tabel (Wajib untuk Prisma ORM)
+> GRANT ALL ON SCHEMA public TO lintas;
+> GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO lintas;
+> GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO lintas;
+> ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO lintas;
+> ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO lintas;
 > ```
+> *Catatan: Jika nama database mengandung tanda strip/minus (misalnya `"stg-routeright"`), selalu apit nama database dengan tanda kutip ganda.*
 
 ### 3. Setup & Jalankan
 
