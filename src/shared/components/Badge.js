@@ -4,17 +4,26 @@ import { cn } from "@/shared/utils/cn";
 
 const variants = {
   default: "bg-surface-2 text-text-muted",
-  primary: "bg-brand-500/10 text-brand-600 dark:text-brand-300",
-  success: "bg-green-500/10 text-green-600 dark:text-green-400",
-  warning: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
-  error: "bg-red-500/10 text-red-600 dark:text-red-400",
-  info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  primary: "bg-primary/10 text-primary",
+  success: "bg-success/10 text-success",
+  warning: "bg-warning/10 text-warning",
+  error: "bg-danger/10 text-danger",
+  info: "bg-info/10 text-info",
 };
 
 const sizes = {
-  sm: "px-2 py-0.5 text-[10px]",
-  md: "px-2.5 py-1 text-xs",
-  lg: "px-3 py-1.5 text-sm",
+  sm: "px-1.5 py-0.5 text-[11px]",
+  md: "px-2 py-0.5 text-xs",
+  lg: "px-2.5 py-1 text-sm",
+};
+
+const dots = {
+  success: "bg-success",
+  warning: "bg-warning",
+  error: "bg-danger",
+  info: "bg-info",
+  primary: "bg-primary",
+  default: "bg-text-subtle",
 };
 
 export default function Badge({
@@ -28,25 +37,13 @@ export default function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold",
+        "inline-flex items-center gap-1.5 rounded-full font-medium whitespace-nowrap",
         variants[variant],
         sizes[size],
         className
       )}
     >
-      {dot && (
-        <span
-          className={cn(
-            "size-1.5 rounded-full",
-            variant === "success" && "bg-green-500",
-            variant === "warning" && "bg-yellow-500",
-            variant === "error" && "bg-red-500",
-            variant === "info" && "bg-blue-500",
-            variant === "primary" && "bg-brand-500",
-            variant === "default" && "bg-gray-500"
-          )}
-        />
-      )}
+      {dot && <span className={cn("size-1.5 rounded-full", dots[variant])} aria-hidden="true" />}
       {icon && <span className="material-symbols-outlined text-[14px]">{icon}</span>}
       {children}
     </span>

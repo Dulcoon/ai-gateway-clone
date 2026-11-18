@@ -42,38 +42,44 @@ export default function Drawer({
     <div className="fixed inset-0 z-50">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px] fade-in cursor-pointer"
+        className="absolute inset-0 bg-black/60 fade-in cursor-pointer"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer panel */}
-      <div className={cn(
-        "absolute right-0 top-0 h-full bg-surface flex flex-col",
-        "shadow-[var(--shadow-elev)]",
-        "slide-in-right",
-        "border-l border-border-subtle",
-        widths[width] || widths.md,
-        className
-      )}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={cn(
+          "absolute right-0 top-0 h-full bg-surface flex flex-col",
+          "shadow-[var(--shadow-elev)]",
+          "slide-in-right",
+          "border-l border-border",
+          widths[width] || widths.md,
+          className
+        )}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border-subtle flex-shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border flex-shrink-0">
+          <div className="flex items-center gap-2.5">
             {title && (
-              <h2 className="text-lg font-semibold text-text-main">{title}</h2>
+              <h2 className="font-display text-base font-semibold text-text-main">{title}</h2>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-[10px] text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors"
+            aria-label="Close"
+            className="p-1.5 rounded-md text-text-muted hover:bg-surface-2 hover:text-text-main transition-colors"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {children}
         </div>
       </div>

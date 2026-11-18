@@ -29,9 +29,9 @@ const VIEW_MODES = [
 ];
 
 const VIEW_CONFIG = {
-  tokens:   { dataKey: "tokens",   color: "#6366f1", gradId: "gradTokens",   formatter: fmtTokens,   label: "Tokens" },
-  requests: { dataKey: "requests", color: "#14b8a6", gradId: "gradRequests", formatter: fmtRequests, label: "Requests" },
-  cost:     { dataKey: "cost",     color: "#f59e0b", gradId: "gradCost",     formatter: fmtCost,     label: "Cost" },
+  tokens:   { dataKey: "tokens",   color: "var(--color-primary, #f2703f)", gradId: "gradTokens",   formatter: fmtTokens,   label: "Tokens" },
+  requests: { dataKey: "requests", color: "var(--color-data, #5eead4)",    gradId: "gradRequests", formatter: fmtRequests, label: "Requests" },
+  cost:     { dataKey: "cost",     color: "var(--color-warning, #fbbf24)", gradId: "gradCost",     formatter: fmtCost,     label: "Cost" },
 };
 
 export default function UsageChart({ period = "7d" }) {
@@ -71,7 +71,7 @@ export default function UsageChart({ period = "7d" }) {
           <button
             key={m.value}
             onClick={() => setViewMode(m.value)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === m.value ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === m.value ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
           >
             {m.label}
           </button>
@@ -87,16 +87,16 @@ export default function UsageChart({ period = "7d" }) {
           <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradTokens" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--color-primary, #f2703f)" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="var(--color-primary, #f2703f)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradRequests" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--color-data, #5eead4)" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="var(--color-data, #5eead4)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradCost" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--color-warning, #fbbf24)" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="var(--color-warning, #fbbf24)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />

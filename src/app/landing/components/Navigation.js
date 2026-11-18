@@ -17,7 +17,7 @@ export default function Navigation() {
           aria-label="Navigate to home"
         >
           <div className="size-8 rounded bg-linear-to-br from-[#f97815] to-orange-700 flex items-center justify-center text-white">
-            <span className="material-symbols-outlined text-[20px]">hub</span>
+            <img src="/logo-mark.svg" alt="" className="h-[18px] w-auto" />
           </div>
           <h2 className="text-white text-xl font-bold tracking-tight">Route Right</h2>
         </button>

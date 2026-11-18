@@ -247,6 +247,7 @@ export default function APIPageClient({ machineId }) {
           <Toggle
             checked={requireApiKey}
             onChange={() => handleRequireApiKey(!requireApiKey)}
+            aria-label="Require API key"
           />
         </div>
 
@@ -324,6 +325,7 @@ export default function APIPageClient({ machineId }) {
                   <Toggle
                     size="sm"
                     checked={key.isActive ?? true}
+                    aria-label={`Aktifkan atau nonaktifkan key ${key.name}`}
                     onChange={(checked) => {
                       if (key.isActive && !checked) {
                         setConfirmState({

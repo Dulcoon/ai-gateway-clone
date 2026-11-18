@@ -14,7 +14,16 @@ import {
 } from "recharts";
 import Card from "@/shared/components/Card";
 
-const COLORS = ["#6366f1", "#14b8a6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#10b981", "#f97316"];
+const COLORS = [
+  "var(--color-primary, #f2703f)",
+  "var(--color-data, #5eead4)",
+  "var(--color-success, #34d399)",
+  "var(--color-warning, #fbbf24)",
+  "#a78bfa",
+  "#22d3ee",
+  "#34d399",
+  "#fb923c",
+];
 
 const fmtTokens = (n) => {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
@@ -47,13 +56,13 @@ export default function ProviderBarChart({ byProvider }) {
         <div className="grid grid-cols-2 items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1">
           <button
             onClick={() => setViewMode("tokens")}
-            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
           >
             Tokens
           </button>
           <button
             onClick={() => setViewMode("requests")}
-            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "requests" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "requests" ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
           >
             Requests
           </button>

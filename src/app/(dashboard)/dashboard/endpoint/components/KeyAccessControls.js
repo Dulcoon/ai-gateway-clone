@@ -115,7 +115,7 @@ export default function KeyAccessControls({ apiKey, onChange, onRequestRestrict,
               />
               <button
                 onClick={handleSaveIp}
-                className="px-2 py-0.5 text-xs font-medium rounded bg-primary text-white hover:bg-primary/90 transition-colors"
+                className="px-2 py-0.5 text-xs font-medium rounded bg-primary text-on-accent hover:bg-primary/90 transition-colors"
               >
                 Save
               </button>

@@ -43,7 +43,7 @@ export default function Pagination({
     >
       {/* Info text */}
       {totalItems > 0 && (
-        <div className="text-sm text-text-muted">
+        <div className="text-xs text-text-muted">
           Showing <span className="font-medium text-text-main">{startItem}</span> to{" "}
           <span className="font-medium text-text-main">{endItem}</span> of{" "}
           <span className="font-medium text-text-main">{totalItems}</span> results
@@ -59,8 +59,8 @@ export default function Pagination({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className={cn(
-                "h-9 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20",
+                "h-8 rounded-md border border-border bg-surface-2",
+                "text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary/25",
                 "cursor-pointer"
               )}
               style={{ colorScheme: 'auto' }}

@@ -23,7 +23,7 @@ const KAME_PARTICLE_COUNT = 6;
 const SPARK_COUNT = 5;
 
 function getProviderConfig(providerId) {
-  return AI_PROVIDERS[providerId] || { color: "#6b7280", name: providerId };
+  return AI_PROVIDERS[providerId] || { color: "var(--color-text-subtle, #7a8290)", name: providerId };
 }
 
 function getProviderImageUrl(providerId) {
@@ -175,7 +175,7 @@ function TopologyEdge({
       <path
         d={edgePath}
         fill="none"
-        stroke="#22d3ee"
+        stroke="var(--color-data, #5eead4)"
         strokeWidth={10}
         strokeOpacity={0.35}
         strokeLinecap="round"
@@ -186,7 +186,7 @@ function TopologyEdge({
       <path
         d={edgePath}
         fill="none"
-        stroke="#4ade80"
+        stroke="var(--color-success, #34d399)"
         strokeWidth={5}
         strokeOpacity={0.85}
         strokeLinecap="round"
@@ -197,7 +197,7 @@ function TopologyEdge({
       <BaseEdge
         id={id}
         path={edgePath}
-        style={{ stroke: "#f8fafc", strokeWidth: 2.2, opacity: 1 }}
+        style={{ stroke: "var(--color-text-main, #f2f5f8)", strokeWidth: 2.2, opacity: 1 }}
         className="topology-edge-kame"
       />
       {/* Energy orbs */}
@@ -205,9 +205,9 @@ function TopologyEdge({
         <circle
           key={`${id}-p-${i}`}
           r={i % 2 === 0 ? 4 : 2.5}
-          fill={i % 3 === 0 ? "#fde047" : i % 3 === 1 ? "#67e8f9" : "#fff"}
+          fill={i % 3 === 0 ? "var(--color-warning, #fbbf24)" : i % 3 === 1 ? "var(--color-data, #5eead4)" : "var(--color-text-main, #f2f5f8)"}
           opacity={0.95}
-          style={{ filter: "drop-shadow(0 0 4px #22d3ee)" }}
+          style={{ filter: "drop-shadow(0 0 4px var(--color-data, #5eead4))" }}
         >
           <animateMotion
             dur={`${0.4 + i * 0.08}s`}
@@ -222,7 +222,7 @@ function TopologyEdge({
         <circle
           key={`${id}-s-${i}`}
           r={1.8}
-          fill="#e0f2fe"
+          fill="var(--color-info, #60a5fa)"
           opacity={0}
         >
           <animate
@@ -292,9 +292,9 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
   });
 
   const edgeStyle = (active, last, error) => {
-    if (error) return { stroke: "#ef4444", strokeWidth: 2.5, opacity: 0.9 };
-    if (active) return { stroke: "#22d3ee", strokeWidth: 3.5, opacity: 1 };
-    if (last) return { stroke: "#f59e0b", strokeWidth: 2, opacity: 0.7 };
+    if (error) return { stroke: "var(--color-danger, #f87171)", strokeWidth: 2.5, opacity: 0.9 };
+    if (active) return { stroke: "var(--color-data, #5eead4)", strokeWidth: 3.5, opacity: 1 };
+    if (last) return { stroke: "var(--color-warning, #fbbf24)", strokeWidth: 2, opacity: 0.7 };
     return { stroke: "var(--color-border)", strokeWidth: 1, opacity: 0.3 };
   };
 
@@ -306,7 +306,7 @@ function buildLayout(providers, activeSet, lastSet, errorSet) {
     const nodeId = `provider-${p.provider}`;
     const data = {
       label: (config.name !== p.provider ? config.name : null) || p.nodeName || p.name || p.provider,
-      color: config.color || "#6b7280",
+      color: config.color || "var(--color-text-subtle, #7a8290)",
       imageUrl: getProviderImageUrl(p.provider),
       textIcon: config.textIcon || (p.provider || "?").slice(0, 2).toUpperCase(),
       active,

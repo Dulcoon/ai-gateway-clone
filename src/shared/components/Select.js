@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
 
 export default function Select({
@@ -16,28 +17,35 @@ export default function Select({
   selectClassName,
   ...props
 }) {
+  const id = useId();
+  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label className="text-sm font-medium text-text-main">
+        <label htmlFor={id} className="text-xs font-medium text-text-muted">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-danger ml-1">*</span>}
         </label>
       )}
       <div className="relative">
         <select
+          id={id}
           value={value}
           onChange={onChange}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
           className={cn(
-            "w-full py-2.5 px-3 pr-10 text-sm text-text-main",
-            "bg-surface-2 border border-transparent rounded-[10px] appearance-none",
-            "focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/40",
-            "transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed",
+            "w-full py-2 px-3 pr-9 text-sm text-text-main",
+            "bg-surface-2 border border-border rounded-md appearance-none",
+            "focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/25",
+            "transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed",
             "text-[16px] sm:text-sm",
-            error && "ring-1 ring-red-500 focus:ring-2 focus:ring-red-500/40 border-red-500/40",
+            error && "border-danger/60 focus:border-danger/60 focus:ring-danger/25",
             selectClassName
           )}
+          style={{ colorScheme: "auto" }}
           {...props}
         >
           <option value="" disabled>
@@ -49,18 +57,18 @@ export default function Select({
             </option>
           ))}
         </select>
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-muted">
-          <span className="material-symbols-outlined text-[20px]">expand_more</span>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-text-subtle">
+          <span className="material-symbols-outlined text-[16px]">expand_more</span>
         </div>
       </div>
       {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
+        <p id={`${id}-error`} className="text-xs text-danger flex items-center gap-1">
           <span className="material-symbols-outlined text-[14px]">error</span>
           {error}
         </p>
       )}
       {hint && !error && (
-        <p className="text-xs text-text-muted">{hint}</p>
+        <p id={`${id}-hint`} className="text-xs text-text-subtle">{hint}</p>
       )}
     </div>
   );

@@ -456,7 +456,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
                 disabled={fetching}
-                className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${period === p.value ? "bg-primary text-white shadow-sm" : "text-text-muted hover:bg-bg-hover hover:text-text"}`}
+                className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${period === p.value ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:bg-bg-hover hover:text-text"}`}
               >
                 {p.label}
               </button>
@@ -501,7 +501,8 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           <select
             value={tableView}
             onChange={(e) => setTableView(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
+            aria-label="Tampilkan tabel"
+            className="w-full rounded-md border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/25 sm:w-auto"
             style={{ colorScheme: 'auto' }}
           >
             {TABLE_OPTIONS.map((opt) => (
@@ -511,13 +512,13 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           <div className="grid grid-cols-2 items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1 sm:flex">
             <button
               onClick={() => setViewMode("costs")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "costs" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "costs" ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
             >
               Costs
             </button>
             <button
               onClick={() => setViewMode("tokens")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-on-accent shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
             >
               Tokens
             </button>

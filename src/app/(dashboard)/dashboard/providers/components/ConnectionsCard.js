@@ -165,7 +165,7 @@ function ConnectionRow({ connection, proxyPools, isOAuth, isFirst, isLast, onMov
             <span className="text-[10px] leading-tight">Delete</span>
           </button>
         </div>
-        <Toggle size="sm" checked={connection.isActive ?? true} onChange={onToggleActive} title={(connection.isActive ?? true) ? "Disable" : "Enable"} />
+        <Toggle size="sm" checked={connection.isActive ?? true} onChange={onToggleActive} aria-label={`${connection.name || "Koneksi"} aktif`} />
       </div>
     </div>
   );
